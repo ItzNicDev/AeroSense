@@ -213,10 +213,7 @@ void loop()
     break;
 
   case 5:
-    servoMap[0] = 0;
-    servoMap[1] = 0;
-    servoMap[2] = 0;
-    servoMap[3] = 0;
+    // chiling
     break;
   }
 
