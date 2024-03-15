@@ -25,6 +25,19 @@ int sensorMode = 1;                  // default mode
 bool displayInfo = true;             // show all info
 float tolleranz = 3.5;               // how much noise should be ignored in percent
 
+
+void attachPorts()
+{
+  pinMode(5, INPUT);            // button
+  pinMode(ledPorts[0], OUTPUT); // red-led
+  pinMode(ledPorts[1], OUTPUT); // green-led
+
+  s1.attach(servoPorts[0]); // servo-1
+  s2.attach(servoPorts[1]); // servo-2
+  s3.attach(servoPorts[2]); // servo-3
+  s4.attach(servoPorts[3]); // servo-4
+}
+
 long _map(float x, float in_min, float in_max, float out_min, float out_max)
 {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
@@ -155,17 +168,7 @@ bool stateHasChanged()
   // return (oldServoMap[0] != servoMap[0] || oldServoMap[1] != servoMap[1] || oldServoMap[2] != servoMap[2] || oldServoMap[3] || servoMap[3]);
 }
 
-void attachPorts()
-{
-  pinMode(5, INPUT);            // button
-  pinMode(ledPorts[0], OUTPUT); // red-led
-  pinMode(ledPorts[1], OUTPUT); // green-led
 
-  s1.attach(servoPorts[0]); // servo-1
-  s2.attach(servoPorts[1]); // servo-2
-  s3.attach(servoPorts[2]); // servo-3
-  s4.attach(servoPorts[3]); // servo-4
-}
 
 void setup(void)
 {
