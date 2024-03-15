@@ -3,7 +3,6 @@
 #include <Servo.h>
 #include "Enums.h"
 
-
 void checkServos();
 
 #endif

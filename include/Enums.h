@@ -1,14 +1,16 @@
 #ifndef ENUMS_H
 #define ENUMS_H
 
-enum ledColor {
-  green,
-  red
+enum ledColor
+{
+  GREEN,
+  RED
 };
 
-enum auditoryCodes {
-  success,
-  error
+enum auditoryCodes
+{
+  SUCCESS,
+  ERROR
 };
 
 #endif

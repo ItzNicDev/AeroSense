@@ -13,37 +13,45 @@ Servo s4;
 sensors_event_t a, g, temp;
 int servoPorts[4] = {12, 11, 10, 9}; // ports used by the servos
 int ledPorts[2] = {2, 3};            // ports used by status-LED
-bool performServoCheck = true;
-int servoMap[4];
+bool performServoCheck = false;
+
+float servoMap[4];
+float oldServoMap[4];
+
 int commandRateLimiter = 1; // in ms
 int buttonState = HIGH;     // Variable to hold the button state
-int lastButtonState = HIGH; // Variable to hold the previous button state
+int oldButtonState = HIGH;  // Variable to hold the previous button state
 int count = 0;              // Variable to hold the count
 bool buttonPressed = false; // Flag to indicate button press
 int sensorMode = 1;         // default mode
 bool displayInfo = true;    // show all info
 
+long _map(float x, float in_min, float in_max, float out_min, float out_max)
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
 int mapper(float value)
 {
-  return map(value, -10, 10, 0, 180);
+  return _map(value, -10.0, 10.0, 0.0, 180.0);
 }
 
 void blinkingLed(int port)
 {
-  digitalWrite(port, HIGH);
-  delay(200);
-  digitalWrite(port, LOW);
-  delay(200);
-  digitalWrite(port, HIGH);
-  delay(200);
-  digitalWrite(port, LOW);
+  for (int i = 0; i < 2; i++)
+  {
+    digitalWrite(port, HIGH);
+    delay(200);
+    digitalWrite(port, LOW);
+    delay(200);
+  }
 }
 
 void auditoryFeedback(auditoryCodes code)
 {
   switch (code)
   {
-  case success:
+  case SUCCESS:
     tone(4, 880);
     delay(200);
     noTone(4);
@@ -55,7 +63,7 @@ void auditoryFeedback(auditoryCodes code)
     noTone(4);
     break;
 
-  case error:
+  case ERROR:
     tone(4, 1200);
     delay(200);
     noTone(4);
@@ -69,7 +77,7 @@ void auditoryFeedback(auditoryCodes code)
   }
 }
 
-void servoSteer(int servoMap[4])
+void servoSteer(float servoMap[4])
 {
   s1.write(mapper(servoMap[0]));
   s2.write(mapper(servoMap[1]));
@@ -81,15 +89,15 @@ void ledInfo(ledColor color)
 {
   switch (color)
   {
-  case green:
+  case GREEN:
     blinkingLed(2);
-    auditoryFeedback(success);
+    auditoryFeedback(SUCCESS);
     break;
 
-  case red:
+  case RED:
     while (1)
     {
-      auditoryFeedback(error);
+      auditoryFeedback(ERROR);
       blinkingLed(3);
     }
   }
@@ -104,7 +112,7 @@ void info(String value)
 int getSensorMode()
 {
   buttonState = digitalRead(5);
-  if (buttonState == LOW && lastButtonState == HIGH)
+  if (buttonState == LOW && oldButtonState == HIGH)
   {
     buttonPressed = true;
   }
@@ -113,7 +121,7 @@ int getSensorMode()
     buttonPressed = false;
   }
 
-  lastButtonState = buttonState;
+  oldButtonState = buttonState;
 
   if (buttonPressed)
   {
@@ -137,9 +145,13 @@ int getSensorMode()
   }
 }
 
-void setup(void)
+bool stateHasChanged()
 {
-  Serial.begin(115200);
+  return (oldServoMap[0] != servoMap[0] || oldServoMap[1] != servoMap[1] || oldServoMap[2] != servoMap[2] || oldServoMap[3] || servoMap[3]);
+}
+
+void attachPorts()
+{
   pinMode(5, INPUT);            // button
   pinMode(ledPorts[0], OUTPUT); // red-led
   pinMode(ledPorts[1], OUTPUT); // green-led
@@ -148,10 +160,17 @@ void setup(void)
   s2.attach(servoPorts[1]); // servo-2
   s3.attach(servoPorts[2]); // servo-3
   s4.attach(servoPorts[3]); // servo-4
+}
+
+void setup(void)
+{
+  Serial.begin(115200);
+
+  attachPorts();
 
   if (!mpu.begin())
   {
-    ledInfo(red);
+    ledInfo(RED);
     info("Failed to find MPU6050 chip");
     while (1)
     {
@@ -160,7 +179,7 @@ void setup(void)
   }
   else
   {
-    ledInfo(green);
+    ledInfo(GREEN);
     info("Successfuly found MPU6050 chip!");
   }
 
@@ -183,40 +202,45 @@ void loop()
 
   sensorMode = getSensorMode();
 
-  switch (sensorMode)
+  if (sensorMode == 1)
   {
-  case 1:
     servoMap[0] = a.acceleration.y;
     servoMap[1] = a.acceleration.x * -1;
     servoMap[2] = a.acceleration.y * -1;
     servoMap[3] = a.acceleration.x;
-    break;
-  case 2:
+  }
+  else if (sensorMode == 2)
+  {
     servoMap[0] = g.gyro.z;
     servoMap[1] = g.gyro.z;
     servoMap[2] = g.gyro.z;
     servoMap[3] = g.gyro.z;
-    break;
-
-  case 3:
+  }
+  else if (sensorMode == 3)
+  {
     servoMap[0] = (g.gyro.x) + g.gyro.z;
     servoMap[1] = (g.gyro.y * -1) + g.gyro.z;
     servoMap[2] = (g.gyro.x * -1) + g.gyro.z;
     servoMap[3] = (g.gyro.y) + g.gyro.z;
-    break;
+  }
 
-  case 4:
+  else if (sensorMode == 4)
+  {
     servoMap[0] = (a.acceleration.y) + g.gyro.z;
     servoMap[1] = (a.acceleration.x * -1) + g.gyro.z;
     servoMap[2] = (a.acceleration.y * -1) + g.gyro.z;
     servoMap[3] = (a.acceleration.x) + g.gyro.z;
-    break;
-
-  case 5:
-    // chiling
-    break;
   }
 
-  servoSteer(servoMap);
+  if (stateHasChanged())
+  {
+    servoSteer(servoMap);
+  }
+
+  oldServoMap[0] = servoMap[0];
+  oldServoMap[1] = servoMap[1];
+  oldServoMap[2] = servoMap[2];
+  oldServoMap[3] = servoMap[3];
+
   delay(commandRateLimiter);
 }
