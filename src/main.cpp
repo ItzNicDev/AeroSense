@@ -38,14 +38,14 @@ void attachPorts()
   s4.attach(servoPorts[3]); // servo-4
 }
 
-long _map(float x, float in_min, float in_max, float out_min, float out_max)
+long floatMap(float x, float in_min, float in_max, float out_min, float out_max)
 {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 int mapper(float value)
 {
-  return _map(value, -10.0, 10.0, 0.0, 180.0);
+  return floatMap(value, -10.0, 10.0, 0.0, 180.0);
 }
 
 void blinkingLed(int port)
