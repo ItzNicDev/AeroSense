@@ -1,5 +1,5 @@
 #include "ServoTesting.h"
-#include <Arduino.h> // Include Arduino.h for delay and Serial
+#include <Arduino.h>
 
 extern Servo s1; // Declare external variables
 extern Servo s2;
