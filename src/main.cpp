@@ -10,21 +10,20 @@ Servo s2;
 Servo s3;
 Servo s4;
 
-sensors_event_t a, g, temp;
+sensors_event_t a, g, temp;          // sensor events
 int servoPorts[4] = {12, 11, 10, 9}; // ports used by the servos
 int ledPorts[2] = {2, 3};            // ports used by status-LED
-bool performServoCheck = false;
-
-float servoMap[4];
-float oldServoMap[4];
-
-int commandRateLimiter = 1; // in ms
-int buttonState = HIGH;     // Variable to hold the button state
-int oldButtonState = HIGH;  // Variable to hold the previous button state
-int count = 0;              // Variable to hold the count
-bool buttonPressed = false; // Flag to indicate button press
-int sensorMode = 1;         // default mode
-bool displayInfo = true;    // show all info
+bool performServoCheck = false;      // decides whether the servo check is made
+float servoMap[4];                   // array that stores all 4 servo values
+float oldServoMap[4];                // array that stores previous servoMap
+int commandRateLimiter = 1;          // limits the loop-function in ms
+int buttonState = HIGH;              // Variable to hold the button state
+int oldButtonState = HIGH;           // Variable to hold the previous button state
+int count = 0;                       // Variable to hold the count
+bool buttonPressed = false;          // Flag to indicate button press
+int sensorMode = 1;                  // default mode
+bool displayInfo = true;             // show all info
+float tolleranz = 3.5;               // how much noise should be ignored in percent
 
 long _map(float x, float in_min, float in_max, float out_min, float out_max)
 {
@@ -145,13 +144,8 @@ int getSensorMode()
   }
 }
 
-// how much nois should be ignored in percent
-float tolleranz = 3.5;
-int filteredOut = 0;
 bool stateHasChanged()
 {
-
-
   return (!(oldServoMap[0] >= servoMap[0] - (tolleranz / 100) && oldServoMap[0] <= servoMap[0] + (tolleranz / 100)) ||
           !(oldServoMap[1] >= servoMap[1] - (tolleranz / 100) && oldServoMap[1] <= servoMap[1] + (tolleranz / 100)) ||
           !(oldServoMap[2] >= servoMap[2] - (tolleranz / 100) && oldServoMap[2] <= servoMap[2] + (tolleranz / 100)) ||
@@ -234,7 +228,6 @@ void loop()
     servoMap[2] = (g.gyro.x * -1) + g.gyro.z;
     servoMap[3] = (g.gyro.y) + g.gyro.z;
   }
-
   else if (sensorMode == 4)
   {
     servoMap[0] = (a.acceleration.y) + g.gyro.z;
@@ -246,11 +239,6 @@ void loop()
   if (stateHasChanged())
   {
     servoSteer(servoMap);
-  }
-  else
-  {
-    filteredOut++;
-    Serial.println(String("Filtered out signals: ") + filteredOut);
   }
 
   oldServoMap[0] = servoMap[0];
