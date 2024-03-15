@@ -2,7 +2,7 @@
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
 #include <Servo.h>
-#include "ServoTesting.h"
+#include "servoTesting.h"
 
 Adafruit_MPU6050 mpu;
 Servo s1;
