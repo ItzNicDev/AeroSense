@@ -145,9 +145,20 @@ int getSensorMode()
   }
 }
 
+// how much nois should be ignored in percent
+float tolleranz = 3.5;
+int filteredOut = 0;
 bool stateHasChanged()
 {
-  return (oldServoMap[0] != servoMap[0] || oldServoMap[1] != servoMap[1] || oldServoMap[2] != servoMap[2] || oldServoMap[3] || servoMap[3]);
+
+
+  return (!(oldServoMap[0] >= servoMap[0] - (tolleranz / 100) && oldServoMap[0] <= servoMap[0] + (tolleranz / 100)) ||
+          !(oldServoMap[1] >= servoMap[1] - (tolleranz / 100) && oldServoMap[1] <= servoMap[1] + (tolleranz / 100)) ||
+          !(oldServoMap[2] >= servoMap[2] - (tolleranz / 100) && oldServoMap[2] <= servoMap[2] + (tolleranz / 100)) ||
+          !(oldServoMap[3] >= servoMap[3] - (tolleranz / 100) && oldServoMap[3] <= servoMap[3] + (tolleranz / 100)));
+
+  // this is the old approach - not verry effective - comment out the first return statement for using this one!
+  // return (oldServoMap[0] != servoMap[0] || oldServoMap[1] != servoMap[1] || oldServoMap[2] != servoMap[2] || oldServoMap[3] || servoMap[3]);
 }
 
 void attachPorts()
@@ -235,6 +246,11 @@ void loop()
   if (stateHasChanged())
   {
     servoSteer(servoMap);
+  }
+  else
+  {
+    filteredOut++;
+    Serial.println(String("Filtered out signals: ") + filteredOut);
   }
 
   oldServoMap[0] = servoMap[0];
