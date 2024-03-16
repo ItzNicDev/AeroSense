@@ -25,7 +25,6 @@ int sensorMode = 1;                  // default mode
 bool displayInfo = true;             // show all info
 float tolleranz = 3.5;               // how much noise should be ignored in percent
 
-
 void attachPorts()
 {
   pinMode(5, INPUT);            // button
@@ -168,8 +167,6 @@ bool stateHasChanged()
   // return (oldServoMap[0] != servoMap[0] || oldServoMap[1] != servoMap[1] || oldServoMap[2] != servoMap[2] || oldServoMap[3] || servoMap[3]);
 }
 
-
-
 void setup(void)
 {
   Serial.begin(115200);
@@ -208,35 +205,38 @@ void loop()
 {
   mpu.getEvent(&a, &g, &temp);
 
-  sensorMode = getSensorMode();
-
-  if (sensorMode == 1)
+  switch (getSensorMode())
   {
+  case 1:
     servoMap[0] = a.acceleration.y;
     servoMap[1] = a.acceleration.x * -1;
     servoMap[2] = a.acceleration.y * -1;
     servoMap[3] = a.acceleration.x;
-  }
-  else if (sensorMode == 2)
-  {
+    break;
+
+  case 2:
     servoMap[0] = g.gyro.z;
     servoMap[1] = g.gyro.z;
     servoMap[2] = g.gyro.z;
     servoMap[3] = g.gyro.z;
-  }
-  else if (sensorMode == 3)
-  {
+    break;
+
+  case 3:
     servoMap[0] = (g.gyro.x) + g.gyro.z;
     servoMap[1] = (g.gyro.y * -1) + g.gyro.z;
     servoMap[2] = (g.gyro.x * -1) + g.gyro.z;
     servoMap[3] = (g.gyro.y) + g.gyro.z;
-  }
-  else if (sensorMode == 4)
-  {
+    break;
+
+  case 4:
     servoMap[0] = (a.acceleration.y) + g.gyro.z;
     servoMap[1] = (a.acceleration.x * -1) + g.gyro.z;
     servoMap[2] = (a.acceleration.y * -1) + g.gyro.z;
     servoMap[3] = (a.acceleration.x) + g.gyro.z;
+    break;
+
+  default:
+    break;
   }
 
   if (stateHasChanged())
