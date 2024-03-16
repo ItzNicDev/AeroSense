@@ -13,4 +13,12 @@ enum auditoryCodes
   ERROR
 };
 
+enum modes
+{
+  ACC,
+  GYROZ,
+  GYRO,
+  ACC_AND_GYRO
+};
+
 #endif

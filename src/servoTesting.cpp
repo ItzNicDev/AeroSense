@@ -1,4 +1,4 @@
-#include "ServoTesting.h"
+#include "servoTesting.h"
 #include <Arduino.h>
 
 extern Servo s1; // Declare external variables

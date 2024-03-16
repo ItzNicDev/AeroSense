@@ -21,10 +21,8 @@ int buttonState = HIGH;              // Variable to hold the button state
 int oldButtonState = HIGH;           // Variable to hold the previous button state
 int count = 0;                       // Variable to hold the count
 bool buttonPressed = false;          // Flag to indicate button press
-int sensorMode = 1;                  // default mode
 bool displayInfo = true;             // show all info
 float tolleranz = 3.5;               // how much noise should be ignored in percent
-
 
 void attachPorts()
 {
@@ -121,7 +119,7 @@ void info(String value)
     Serial.println(value);
 }
 
-int getSensorMode()
+modes getSensorMode(void)
 {
   buttonState = digitalRead(5);
   if (buttonState == LOW && oldButtonState == HIGH)
@@ -153,7 +151,8 @@ int getSensorMode()
     }
 
     info(String("Mode: ") + count);
-    return count;
+
+    return static_cast<modes>(count - 1);
   }
 }
 
@@ -168,12 +167,11 @@ bool stateHasChanged()
   // return (oldServoMap[0] != servoMap[0] || oldServoMap[1] != servoMap[1] || oldServoMap[2] != servoMap[2] || oldServoMap[3] || servoMap[3]);
 }
 
-
 void inizialization()
 {
   Serial.begin(115200);
 
-  attachPorts();
+   attachPorts();
 
   if (!mpu.begin())
   {
@@ -209,30 +207,31 @@ void runSystem()
   {
     mpu.getEvent(&a, &g, &temp);
 
+
     switch (getSensorMode())
     {
-    case 1:
+    case ACC:
       servoMap[0] = a.acceleration.y;
       servoMap[1] = a.acceleration.x * -1;
       servoMap[2] = a.acceleration.y * -1;
       servoMap[3] = a.acceleration.x;
       break;
 
-    case 2:
+    case GYROZ:
       servoMap[0] = g.gyro.z;
       servoMap[1] = g.gyro.z;
       servoMap[2] = g.gyro.z;
       servoMap[3] = g.gyro.z;
       break;
 
-    case 3:
+    case GYRO:
       servoMap[0] = (g.gyro.x) + g.gyro.z;
       servoMap[1] = (g.gyro.y * -1) + g.gyro.z;
       servoMap[2] = (g.gyro.x * -1) + g.gyro.z;
       servoMap[3] = (g.gyro.y) + g.gyro.z;
       break;
 
-    case 4:
+    case ACC_AND_GYRO:
       servoMap[0] = (a.acceleration.y) + g.gyro.z;
       servoMap[1] = (a.acceleration.x * -1) + g.gyro.z;
       servoMap[2] = (a.acceleration.y * -1) + g.gyro.z;
