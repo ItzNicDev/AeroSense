@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
@@ -10,19 +11,19 @@ Servo s2;
 Servo s3;
 Servo s4;
 
-sensors_event_t a, g, temp;          // sensor events
-int servoPorts[4] = {12, 11, 10, 9}; // ports used by the servos
-int ledPorts[2] = {2, 3};            // ports used by status-LED
-bool performServoCheck = false;      // decides whether the servo check is made
-float servoMap[4];                   // array that stores all 4 servo values
-float oldServoMap[4];                // array that stores previous servoMap
-int commandRateLimiter = 1;          // limits the loop-function in ms
-int buttonState = HIGH;              // Variable to hold the button state
-int oldButtonState = HIGH;           // Variable to hold the previous button state
-int count = 0;                       // Variable to hold the count
-bool buttonPressed = false;          // Flag to indicate button press
-bool displayInfo = true;             // show all info
-float tolleranz = 3.5;               // how much noise should be ignored in percent
+sensors_event_t a, g, temp;                // sensor events
+const int servoPorts[4] = {12, 11, 10, 9}; // ports used by the servos
+const int ledPorts[2] = {2, 3};            // ports used by status-LED
+bool performServoCheck = false;            // decides whether the servo check is made
+float servoMap[4];                         // array that stores all 4 servo values
+float oldServoMap[4];                      // array that stores previous servoMap
+int commandRateLimiter = 1;                // limits the loop-function in ms
+int buttonState = HIGH;                    // Variable to hold the button state
+int oldButtonState = HIGH;                 // Variable to hold the previous button state
+int count = 0;                             // Variable to hold the count
+bool buttonPressed = false;                // Flag to indicate button press
+bool displayInfo = true;                   // show all info
+float tolleranz = 3.5;                     // how much noise should be ignored in percent
 
 void attachPorts()
 {
@@ -162,16 +163,13 @@ bool stateHasChanged()
           !(oldServoMap[1] >= servoMap[1] - (tolleranz / 100) && oldServoMap[1] <= servoMap[1] + (tolleranz / 100)) ||
           !(oldServoMap[2] >= servoMap[2] - (tolleranz / 100) && oldServoMap[2] <= servoMap[2] + (tolleranz / 100)) ||
           !(oldServoMap[3] >= servoMap[3] - (tolleranz / 100) && oldServoMap[3] <= servoMap[3] + (tolleranz / 100)));
-
-  // this is the old approach - not verry effective - comment out the first return statement for using this one!
-  // return (oldServoMap[0] != servoMap[0] || oldServoMap[1] != servoMap[1] || oldServoMap[2] != servoMap[2] || oldServoMap[3] || servoMap[3]);
 }
 
 void inizialization()
 {
   Serial.begin(115200);
 
-   attachPorts();
+  attachPorts();
 
   if (!mpu.begin())
   {
@@ -203,17 +201,16 @@ void inizialization()
 
 void runSystem()
 {
-  while (1)
+  for (;;)
   {
     mpu.getEvent(&a, &g, &temp);
-
 
     switch (getSensorMode())
     {
     case ACC:
       servoMap[0] = a.acceleration.y;
-      servoMap[1] = a.acceleration.x * -1;
-      servoMap[2] = a.acceleration.y * -1;
+      servoMap[1] = -a.acceleration.x;
+      servoMap[2] = -a.acceleration.y;
       servoMap[3] = a.acceleration.x;
       break;
 
@@ -225,17 +222,17 @@ void runSystem()
       break;
 
     case GYRO:
-      servoMap[0] = (g.gyro.x) + g.gyro.z;
-      servoMap[1] = (g.gyro.y * -1) + g.gyro.z;
-      servoMap[2] = (g.gyro.x * -1) + g.gyro.z;
-      servoMap[3] = (g.gyro.y) + g.gyro.z;
+      servoMap[0] = g.gyro.x + g.gyro.z;
+      servoMap[1] = -g.gyro.y + g.gyro.z;
+      servoMap[2] = -g.gyro.x + g.gyro.z;
+      servoMap[3] = g.gyro.y + g.gyro.z;
       break;
 
     case ACC_AND_GYRO:
-      servoMap[0] = (a.acceleration.y) + g.gyro.z;
-      servoMap[1] = (a.acceleration.x * -1) + g.gyro.z;
-      servoMap[2] = (a.acceleration.y * -1) + g.gyro.z;
-      servoMap[3] = (a.acceleration.x) + g.gyro.z;
+      servoMap[0] = a.acceleration.y + g.gyro.z;
+      servoMap[1] = -a.acceleration.x + g.gyro.z;
+      servoMap[2] = -a.acceleration.y + g.gyro.z;
+      servoMap[3] = a.acceleration.x + g.gyro.z;
       break;
 
     default:
@@ -247,10 +244,7 @@ void runSystem()
       servoSteer(servoMap);
     }
 
-    oldServoMap[0] = servoMap[0];
-    oldServoMap[1] = servoMap[1];
-    oldServoMap[2] = servoMap[2];
-    oldServoMap[3] = servoMap[3];
+    memcpy(oldServoMap, servoMap, sizeof(oldServoMap));
 
     delay(commandRateLimiter);
   }
@@ -259,6 +253,11 @@ void runSystem()
 int main()
 {
   init();
+
+#if defined(USBCON)
+  USBDevice.attach();
+#endif
+
   inizialization();
   runSystem();
   return 0;
